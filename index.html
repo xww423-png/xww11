@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学习小站</title>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f1e9;--card:#fff;--border:#e4dbd0;--text:#2a2520;--muted:#9a9080;
+  --par:#3d6b8c;--parl:#e8f2f9;--chi:#e07b3a;--chil:#fef3eb;
+  --gr:#4a9e6b;--grl:#eaf6ef;--rd:#c94040;--rdl:#fdeaea;
+  --yw:#c8920a;--ywl:#fdf3d0;--sh:0 2px 14px rgba(0,0,0,.08);--r:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
+
+/* loading */
+#loading-screen{position:fixed;inset:0;background:linear-gradient(150deg,#eef5fb,#f6f1e9);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:14px;}
+.ld-logo{font-family:'Ma Shan Zheng',cursive;font-size:48px;color:var(--par);letter-spacing:4px;}
+.ld-spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--par);border-radius:50%;animation:spin .7s linear infinite;}
+.ld-txt{color:var(--muted);font-size:13px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* login */
+#login-screen{min-height:100vh;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:linear-gradient(150deg,#eef5fb 0%,#f6f1e9 60%,#fef3eb 100%);}
+.app-logo{font-family:'Ma Shan Zheng',cursive;font-size:52px;color:var(--par);margin-bottom:6px;letter-spacing:4px;}
+.app-sub{color:var(--muted);font-size:13px;margin-bottom:36px;}
+.login-section{width:100%;max-width:420px;}
+.login-title{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:12px;letter-spacing:1px;}
+.role-cards{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:28px;}
+.role-card{background:var(--card);border:2px solid var(--border);border-radius:18px;padding:24px 28px;cursor:pointer;text-align:center;transition:all .2s;flex:1;min-width:140px;box-shadow:var(--sh);}
+.role-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,.12);}
+.role-card.p:hover{border-color:var(--par);}.role-card.c:hover{border-color:var(--chi);}
+.ri{font-size:40px;margin-bottom:10px;}.rn{font-size:16px;font-weight:700;margin-bottom:4px;}
+.rd2{font-size:11px;color:var(--muted);line-height:1.6;}
+.student-picker{display:none;background:var(--card);border-radius:18px;padding:22px;box-shadow:var(--sh);border:1px solid var(--border);}
+.student-picker.show{display:block;}
+.sp-title{font-size:15px;font-weight:700;margin-bottom:14px;color:var(--chi);}
+.student-list{display:flex;flex-direction:column;gap:8px;}
+.student-btn{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);cursor:pointer;transition:all .15s;width:100%;font-family:inherit;font-size:14px;color:var(--text);}
+.student-btn:hover{border-color:var(--chi);background:var(--chil);transform:translateX(4px);}
+.s-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.s-info{flex:1;text-align:left;}
+.s-name{font-weight:600;font-size:14px;}.s-pts{font-size:11px;color:var(--yw);}
+.sp-back{margin-top:12px;background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;padding:4px 0;}
+.sp-back:hover{color:var(--text);}
+.no-students{text-align:center;padding:20px;color:var(--muted);font-size:13px;}
+
+/* app */
+#app{display:none;min-height:100vh;flex-direction:column;}
+.topbar{display:flex;align-items:center;padding:0 16px;height:54px;background:var(--card);border-bottom:1px solid var(--border);gap:10px;position:sticky;top:0;z-index:50;box-shadow:var(--sh);}
+.logo{font-family:'Ma Shan Zheng',cursive;font-size:20px;flex:1;}
+.logo.p{color:var(--par);}.logo.c{color:var(--chi);}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;}
+.badge.p{background:var(--parl);color:var(--par);}.badge.c{background:var(--chil);color:var(--chi);}
+.sync-wrap{display:flex;align-items:center;gap:5px;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--gr);transition:background .3s;flex-shrink:0;}
+.sync-dot.ing{background:var(--yw);animation:blink .8s infinite;}
+.sync-dot.err{background:var(--rd);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.sync-lbl{font-size:11px;color:var(--muted);}
+.btn-sw{font-size:12px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:8px;padding:4px 11px;cursor:pointer;}
+.btn-sw:hover{border-color:var(--muted);color:var(--text);}
+.tabs{display:flex;padding:0 16px;background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto;}
+.tab{padding:11px 16px;border:none;background:none;font-size:13px;font-family:inherit;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .15s;white-space:nowrap;}
+.tab.on.p{color:var(--par);border-color:var(--par);font-weight:600;}
+.tab.on.c{color:var(--chi);border-color:var(--chi);font-weight:600;}
+.main{flex:1;max-width:860px;margin:0 auto;padding:16px;width:100%;}
+
+/* common */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--sh);}
+.ct{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.srow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.sbox{flex:1;min-width:80px;background:var(--bg);border-radius:10px;padding:12px;text-align:center;border:1px solid var(--border);}
+.snum{font-size:22px;font-weight:700;line-height:1;margin-bottom:2px;}.slb{font-size:11px;color:var(--muted);}
+.emp{text-align:center;padding:28px;color:var(--muted);}
+.empi{font-size:34px;margin-bottom:8px;}.empt{font-size:13px;}
+.ti{display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);}
+.ti:last-child{border-bottom:none;padding-bottom:0;}.ti:first-child{padding-top:0;}
+.chk{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:2px;}
+.chk.done{background:var(--gr);border-color:var(--gr);}
+.chk.done::after{content:'✓';color:#fff;font-size:11px;font-weight:700;}
+.tb{flex:1;min-width:0;}
+.tit{font-weight:500;margin-bottom:4px;}.tit.done{text-decoration:line-through;color:var(--muted);}
+.meta{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.tag{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;}
+.tag.homework{background:var(--parl);color:var(--par);}.tag.reading{background:var(--grl);color:var(--gr);}
+.tag.exercise{background:var(--chil);color:var(--chi);}.tag.quiz{background:var(--ywl);color:var(--yw);}
+.tag.custom{background:var(--border);color:var(--muted);}
+.tag.pending{background:var(--ywl);color:var(--yw);}.tag.completed{background:var(--grl);color:var(--gr);}
+.tag.overdue{background:var(--rdl);color:var(--rd);}.tag.approved{background:var(--grl);color:var(--gr);}
+.tag.rejected{background:var(--rdl);color:var(--rd);}.tag.waiting{background:var(--ywl);color:var(--yw);}
+.tdue{font-size:11px;color:var(--muted);}.tpts{font-size:11px;color:var(--yw);font-weight:700;}
+.tnote{font-size:11px;color:var(--muted);margin-top:4px;background:var(--bg);padding:5px 9px;border-radius:7px;}
+.ta{display:flex;gap:5px;flex-shrink:0;}
+.bp{border:none;border-radius:9px;padding:8px 18px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.bp.p{background:var(--par);color:#fff;}.bp.p:hover{opacity:.85;}
+.bp.c{background:var(--chi);color:#fff;}.bp.c:hover{opacity:.85;}
+.bs{background:var(--bg);color:var(--text);border:1.5px solid var(--border);border-radius:9px;padding:7px 15px;font-family:inherit;font-size:13px;cursor:pointer;}
+.bs:hover{border-color:var(--muted);}
+.bico{background:none;border:1px solid var(--border);border-radius:7px;padding:4px 9px;cursor:pointer;font-size:12px;color:var(--muted);font-family:inherit;}
+.bico:hover{background:var(--bg);}.bico.del:hover{border-color:var(--rd);color:var(--rd);}
+.bcmp{background:linear-gradient(135deg,var(--chi),#f09050);color:#fff;border:none;border-radius:9px;padding:7px 13px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;flex-shrink:0;}
+.bcmp:hover{transform:scale(1.04);}
+.fgrid{display:grid;gap:12px;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fg{display:flex;flex-direction:column;gap:4px;}
+.fl{font-size:12px;font-weight:500;color:var(--muted);}
+.fi,.fs,.fta{border:1.5px solid var(--border);border-radius:9px;padding:9px 11px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text);width:100%;}
+.fi:focus,.fs:focus,.fta:focus{outline:none;border-color:var(--par);}
+.fta{resize:vertical;min-height:64px;}
+.student-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-bottom:6px;}
+.sc{background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--sh);transition:all .2s;cursor:pointer;position:relative;}
+.sc:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.1);border-color:var(--par);}
+.sc-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.sc-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+.sc-name{font-size:15px;font-weight:700;}.sc-pts{font-size:12px;color:var(--yw);font-weight:600;}
+.sc-stats{display:flex;gap:6px;}
+.sc-stat{flex:1;text-align:center;background:var(--bg);border-radius:8px;padding:6px 4px;}
+.sc-stat-n{font-size:16px;font-weight:700;}.sc-stat-l{font-size:10px;color:var(--muted);}
+.sc-del{position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;font-size:14px;color:var(--muted);opacity:0;transition:opacity .15s;padding:2px;}
+.sc:hover .sc-del{opacity:1;}.sc-del:hover{color:var(--rd);}
+.filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center;}
+.filter-btn{padding:4px 11px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s;color:var(--text);}
+.filter-btn.on{border-color:var(--par);background:var(--parl);color:var(--par);font-weight:600;}
+.filter-btn.on.c{border-color:var(--chi);background:var(--chil);color:var(--chi);}
+.hero{background:linear-gradient(135deg,#f0f7ff,#e8f2f9);border:1.5px solid #c5ddf0;border-radius:16px;padding:18px 20px;margin-bottom:16px;display:flex;align-items:center;gap:16px;}
+.hero.c{background:linear-gradient(135deg,#fff4ea,#fef3eb);border-color:#f5d99a;}
+.hav{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
+.hav.p{background:var(--parl);border:2.5px solid var(--par);}
+.hav.c{background:var(--chil);border:2.5px solid var(--chi);}
+.hn{font-size:16px;font-weight:700;margin-bottom:2px;}
+.hpt{font-size:13px;font-weight:700;}.hpt.p{color:var(--par);}.hpt.c{color:var(--yw);}
+.hsb{font-size:12px;color:var(--muted);margin-top:2px;}
+.rg{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:10px;}
+.rc{border:1.5px solid var(--border);border-radius:12px;padding:14px;text-align:center;background:var(--bg);position:relative;overflow:hidden;}
+.rc.can{border-color:var(--yw);background:linear-gradient(160deg,#fffdf5,#fffaea);}
+.rc.can::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--yw),#f0c050);}
+.rem2{font-size:28px;margin-bottom:6px;}.rn2{font-size:12px;font-weight:700;margin-bottom:2px;}
+.rp2{font-size:11px;color:var(--yw);font-weight:700;}.rdsc{font-size:10px;color:var(--muted);margin-top:2px;}
+.brm{margin-top:9px;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid var(--yw);background:var(--ywl);color:var(--yw);width:100%;}
+.brm:hover{background:var(--yw);color:#fff;}
+.brm:disabled{opacity:.4;cursor:not-allowed;border-color:var(--border);background:transparent;color:var(--muted);}
+.pts-hero{background:linear-gradient(135deg,#fff9ed,#fef3eb);border:1.5px solid #f5d99a;border-radius:16px;padding:24px;text-align:center;margin-bottom:16px;}
+.pb{font-size:56px;font-weight:700;color:var(--yw);line-height:1;font-family:'Ma Shan Zheng',cursive;}
+.pl{font-size:13px;color:var(--muted);margin-top:5px;}
+.pbar{height:9px;background:var(--border);border-radius:5px;overflow:hidden;margin-top:10px;}
+.pfill{height:100%;border-radius:5px;transition:width .5s;}
+.rdmi{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.rdmi:last-child{border-bottom:none;}
+@keyframes pop{0%{transform:scale(0) rotate(-15deg);opacity:0}65%{transform:scale(1.15) rotate(4deg)}100%{transform:scale(1);opacity:1}}
+.cel{display:none;position:fixed;inset:0;z-index:300;align-items:center;justify-content:center;background:rgba(0,0,0,.45);}
+.cel.show{display:flex;}
+.celb{background:#fff;border-radius:22px;padding:36px 44px;text-align:center;animation:pop .35s ease;max-width:300px;}
+.cele{font-size:56px;margin-bottom:10px;}.celt{font-size:20px;font-weight:700;margin-bottom:5px;}
+.cels{font-size:13px;color:var(--muted);margin-bottom:18px;}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s;}
+.mo.open{opacity:1;pointer-events:all;}
+.mb{background:var(--card);border-radius:18px;padding:24px;width:100%;max-width:480px;transform:scale(.95);transition:transform .2s;max-height:88vh;overflow-y:auto;}
+.mo.open .mb{transform:scale(1);}
+.mbt{font-size:16px;font-weight:700;margin-bottom:18px;}
+.mf{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(70px);background:#2a2520;color:#fff;padding:10px 22px;border-radius:10px;font-size:13px;transition:transform .3s;z-index:400;white-space:nowrap;pointer-events:none;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+.emoji-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+.ep{font-size:22px;cursor:pointer;padding:4px 6px;border-radius:8px;border:2px solid transparent;transition:all .15s;}
+.ep:hover{background:var(--bg);}.ep.sel{border-color:var(--par);background:var(--parl);}
+@media(max-width:520px){.frow{grid-template-columns:1fr;}.student-cards{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<!-- loading -->
+<div id="loading-screen">
+  <div class="ld-logo">学习小站</div>
+  <div class="ld-spin"></div>
+  <div class="ld-txt">正在连接云端数据...</div>
+</div>
+
+<!-- celebrate -->
+<div class="cel" id="cel">
+  <div class="celb">
+    <div class="cele" id="ce">🎉</div>
+    <div class="celt" id="ct2"></div>
+    <div class="cels" id="cs"></div>
+    <button class="bp c" onclick="closeCel()">好的！</button>
+  </div>
+</div>
+
+<!-- login -->
+<div id="login-screen">
+  <div class="app-logo">学习小站</div>
+  <div class="app-sub">家长布置任务 · 孩子完成打卡 · 积分兑换奖励</div>
+  <div class="login-section">
+    <div class="login-title">选择身份登录</div>
+    <div class="role-cards" id="role-cards">
+      <div class="role-card p" onclick="loginParent()">
+        <div class="ri">👨‍👩‍👧</div>
+        <div class="rn" style="color:var(--par)">家长端</div>
+        <div class="rd2">管理孩子 · 布置任务<br>设置奖励 · 审批兑换</div>
+      </div>
+      <div class="role-card c" onclick="showStudentPicker()">
+        <div class="ri">🧒</div>
+        <div class="rn" style="color:var(--chi)">学生端</div>
+        <div class="rd2">选择我的名字<br>查看任务 · 打卡完成</div>
+      </div>
+    </div>
+    <div class="student-picker" id="student-picker">
+      <div class="sp-title">👋 选择你的名字</div>
+      <div class="student-list" id="student-list"></div>
+      <button class="sp-back" onclick="hideStudentPicker()">← 返回</button>
+    </div>
+  </div>
+</div>
+
+<!-- app -->
+<div id="app">
+  <div class="topbar">
+    <div class="logo" id="top-logo">学习小站</div>
+    <div class="badge" id="top-badge"></div>
+    <div class="sync-wrap">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span class="sync-lbl" id="sync-lbl">已同步</span>
+    </div>
+    <button class="btn-sw" onclick="logout()">切换身份</button>
+  </div>
+  <div class="tabs" id="tabs-bar"></div>
+  <div class="main" id="main-content"></div>
+</div>
+
+<div class="mo" id="mo" onclick="cmo(event)">
+  <div class="mb">
+    <div class="mbt" id="mt"></div>
+    <div id="mbody"></div>
+    <div class="mf" id="mf"></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, update, remove, push }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ══════════════════════════════════════════
+//  ★ 在这里填入你的 Firebase 配置 ★
+//  从 Firebase 控制台复制，替换下方内容
+// ══════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "AIzaSyBaHY9xG6GHc4FtQdDYYi42imnPPH9TdyM",
+  authDomain:        "mjcg-3050c.firebaseapp.com",
+  databaseURL:       "https://mjcg-3050c-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "mjcg-3050c",
+  storageBucket:     "mjcg-3050c.firebasestorage.app",
+  messagingSenderId: "639649825599",
+  appId:             "1:639649825599:web:37ae27e8ec687e025d098a"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+// ══════════════════════════════════════════
+//  数据层
+// ══════════════════════════════════════════
+const AVATARS = ['🐼','🐨','🦁','🐯','🐸','🐧','🦊','🐻','🐺','🦄','🐙','🦋'];
+const COLORS  = ['#e07b3a','#3d6b8c','#4a9e6b','#c94040','#8b5cf6','#c8920a','#e07b99','#2d9da8'];
+const TL = {homework:'📚作业',reading:'📖阅读',exercise:'🏃运动',quiz:'📝测验',custom:'✨自定义'};
+const SL = {pending:'待完成',in_progress:'进行中',completed:'已完成',overdue:'已过期'};
+const TE = {homework:'📚',reading:'📖',exercise:'🏃',quiz:'📝',custom:'✨'};
+
+function uid(){ return Math.random().toString(36).slice(2,9); }
+function now(){ return new Date().toISOString(); }
+function tmr(){ const d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); }
+function fd(iso){ if(!iso)return''; const d=new Date(iso); return`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+
+// 内存数据（由 Firebase 实时推送维护）
+let DB = { students:{}, tasks:{}, rewards:{}, redemptions:{} };
+let role=null, currentStudentId=null, curTab=0, filterSid='all';
+let _rat=5, _selAv=AVATARS[0], _selCl=COLORS[0];
+
+// 同步状态
+function ss(state, lbl){
+  const dot = document.getElementById('sync-dot');
+  dot.className = 'sync-dot' + (state==='ing'?' ing': state==='err'?' err':'');
+  document.getElementById('sync-lbl').textContent = lbl;
+}
+
+// Firebase 写操作封装
+function dbSet(path, val){ ss('ing','同步中...'); return set(ref(db, path), val).then(()=>ss('ok','已同步')).catch(()=>ss('err','同步失败')); }
+function dbUpdate(path, val){ ss('ing','同步中...'); return update(ref(db, path), val).then(()=>ss('ok','已同步')).catch(()=>ss('err','同步失败')); }
+function dbRemove(path){ ss('ing','同步中...'); return remove(ref(db, path)).then(()=>ss('ok','已同步')).catch(()=>ss('err','同步失败')); }
+
+// 实时监听（核心同步逻辑）
+function startListening(){
+  onValue(ref(db, '/'), snapshot => {
+    const val = snapshot.val() || {};
+    DB.students    = val.students    || {};
+    DB.tasks       = val.tasks       || {};
+    DB.rewards     = val.rewards     || {};
+    DB.redemptions = val.redemptions || {};
+    ss('ok','已同步');
+    if(role) renderTab();
+    updateStudentPicker();
+  });
+}
+
+// 初始化：写入默认数据（仅首次）
+async function initDefaultData(){
+  const s1=uid(), s2=uid();
+  const defaultData = {
+    students:{
+      [s1]:{id:s1,name:'小明',avatar:'🐼',color:'#e07b3a'},
+      [s2]:{id:s2,name:'小红',avatar:'🦊',color:'#3d6b8c'},
+    },
+    tasks:{
+      [uid()]:{title:'完成数学练习册第8页',type:'homework',status:'pending',due:tmr(),pts:15,note:'注意加减混合运算',studentId:s1,created:now()},
+      [uid()]:{title:'阅读《小王子》第三章',type:'reading',status:'pending',due:tmr(),pts:10,note:'',studentId:s1,created:now()},
+      [uid()]:{title:'背诵古诗《静夜思》',type:'quiz',status:'pending',due:tmr(),pts:12,note:'',studentId:s2,created:now()},
+    },
+    rewards:{
+      [uid()]:{name:'看动画片',emoji:'📺',pts:20,desc:'看30分钟喜欢的动画'},
+      [uid()]:{name:'吃冰淇淋',emoji:'🍦',pts:15,desc:'选一个喜欢的口味'},
+      [uid()]:{name:'去游乐场',emoji:'🎡',pts:80,desc:'周末全家一起去'},
+    },
+    redemptions:{},
+  };
+  await dbSet('/', defaultData);
+}
+
+// 启动
+(async ()=>{
+  try{
+    // 检查是否有数据，无则初始化
+    onValue(ref(db,'/students'), snap=>{
+      if(!snap.exists()) initDefaultData();
+    }, {onlyOnce:true});
+    startListening();
+  } catch(e){
+    document.querySelector('.ld-txt').textContent='连接失败，请检查网络';
+    document.querySelector('.ld-spin').style.display='none';
+    return;
+  }
+  // 短暂加载动画后显示登录
+  setTimeout(()=>{
+    document.getElementById('loading-screen').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
+  }, 1200);
+})();
+
+// ══════════════════════════════════════════
+//  积分计算
+// ══════════════════════════════════════════
+function ptsOf(sid){
+  const e=Object.values(DB.tasks).filter(t=>t.studentId===sid&&t.status==='completed').reduce((s,t)=>s+(t.pts||0),0);
+  const sp=Object.values(DB.redemptions).filter(r=>r.studentId===sid&&r.status==='approved').reduce((s,r)=>s+(r.pts||0),0);
+  return{e,sp,c:e-sp};
+}
+
+// ══════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════
+window.loginParent = function(){ role='p'; currentStudentId=null; startApp(); };
+window.showStudentPicker = function(){
+  document.getElementById('role-cards').style.display='none';
+  document.getElementById('student-picker').classList.add('show');
+  renderStudentPicker();
+};
+window.hideStudentPicker = function(){
+  document.getElementById('role-cards').style.display='';
+  document.getElementById('student-picker').classList.remove('show');
+};
+function renderStudentPicker(){
+  const list=document.getElementById('student-list');
+  const students=Object.values(DB.students);
+  if(students.length===0){list.innerHTML='<div class="no-students">还没有学生账号<br>请先让家长添加孩子</div>';return;}
+  list.innerHTML=students.map(s=>{
+    const p=ptsOf(s.id);
+    const pend=Object.values(DB.tasks).filter(t=>t.studentId===s.id&&t.status!=='completed').length;
+    return`<button class="student-btn" onclick="loginStudent('${s.id}')">
+      <div class="s-av" style="background:${s.color}22;border:2px solid ${s.color}">${s.avatar}</div>
+      <div class="s-info"><div class="s-name">${s.name}</div><div class="s-pts">⭐${p.c}分 · ${pend}个待完成</div></div>
+      <span style="color:var(--muted);font-size:18px">›</span>
+    </button>`;}).join('');
+}
+function updateStudentPicker(){
+  if(document.getElementById('student-picker').classList.contains('show')) renderStudentPicker();
+}
+window.loginStudent = function(sid){ role='c'; currentStudentId=sid; startApp(); };
+function startApp(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('top-logo').className='logo '+role;
+  const badge=document.getElementById('top-badge');
+  badge.className='badge '+role;
+  if(role==='p') badge.textContent='👨‍👩‍👧 家长端';
+  else{ const s=DB.students[currentStudentId]; badge.textContent=`${s?s.avatar:''} ${s?s.name:'学生'}`; }
+  curTab=0; filterSid='all'; buildTabs(); renderTab();
+}
+window.logout = function(){
+  role=null; currentStudentId=null;
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('role-cards').style.display='';
+  document.getElementById('student-picker').classList.remove('show');
+};
+function buildTabs(){
+  const t=role==='p'?['👥 学生管理','📋 任务管理','🏆 奖励设置','📊 完成记录']:['📋 我的任务','🏆 积分兑换','📊 我的记录'];
+  document.getElementById('tabs-bar').innerHTML=t.map((x,i)=>
+    `<button class="tab${i===0?' on':''} ${role}" onclick="swTab(${i})">${x}</button>`).join('');
+}
+window.swTab = function(i){ curTab=i; document.querySelectorAll('.tab').forEach((b,j)=>b.classList.toggle('on',j===i)); renderTab(); };
+function renderTab(){ const mc=document.getElementById('main-content'); if(role==='p')[rPS,rPT,rPR,rPRec][curTab](mc); else[rCT,rCR,rCRec][curTab](mc); }
+
+// ══════════════════════════════════════════
+//  PARENT — STUDENTS
+// ══════════════════════════════════════════
+function rPS(mc){
+  const students=Object.values(DB.students);
+  const cards=students.length===0
+    ?'<div class="emp"><div class="empi">👶</div><div class="empt">还没有添加孩子，点击右上方按钮添加</div></div>'
+    :students.map(s=>{
+      const p=ptsOf(s.id);
+      const tasks=Object.values(DB.tasks).filter(t=>t.studentId===s.id);
+      const done=tasks.filter(t=>t.status==='completed').length;
+      const pend=tasks.filter(t=>t.status!=='completed').length;
+      return`<div class="sc" onclick="goToStudent('${s.id}')">
+        <button class="sc-del" onclick="event.stopPropagation();delStudent('${s.id}')">✕</button>
+        <div class="sc-top">
+          <div class="sc-av" style="background:${s.color}22;border:2px solid ${s.color}">${s.avatar}</div>
+          <div><div class="sc-name">${s.name}</div><div class="sc-pts">⭐ ${p.c} 积分</div></div>
+        </div>
+        <div class="sc-stats">
+          <div class="sc-stat"><div class="sc-stat-n" style="color:var(--yw)">${pend}</div><div class="sc-stat-l">待完成</div></div>
+          <div class="sc-stat"><div class="sc-stat-n" style="color:var(--gr)">${done}</div><div class="sc-stat-l">已完成</div></div>
+          <div class="sc-stat"><div class="sc-stat-n" style="color:var(--yw)">${p.e}</div><div class="sc-stat-l">累计分</div></div>
+        </div>
+      </div>`;}).join('');
+
+  const board=students.length===0?'<div class="emp"><div class="empt">暂无数据</div></div>'
+    :[...students].map(s=>({...s,...ptsOf(s.id)})).sort((a,b)=>b.c-a.c).map((s,i)=>{
+      const tasks=Object.values(DB.tasks).filter(t=>t.studentId===s.id);
+      const done=tasks.filter(t=>t.status==='completed').length;
+      const pct=tasks.length>0?Math.round(done/tasks.length*100):0;
+      return`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:18px;width:26px;text-align:center">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}</div>
+        <div style="width:34px;height:34px;border-radius:50%;background:${s.color}22;border:2px solid ${s.color};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${s.avatar}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;margin-bottom:3px">${s.name} <span style="font-size:11px;color:var(--yw);font-weight:700">⭐${s.c}分</span></div>
+          <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${s.color};border-radius:3px;transition:width .5s"></div>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">${done}/${tasks.length}任务 · ${pct}%</div>
+        </div>
+      </div>`;}).join('');
+
+  mc.innerHTML=`
+    <div class="card"><div class="ct">👥 孩子管理（${students.length}人）
+      <button class="bp p" style="margin-left:auto;padding:6px 14px;font-size:12px" onclick="oAddStudent()">＋ 添加孩子</button>
+    </div><div class="student-cards">${cards}</div></div>
+    <div class="card"><div class="ct">🏆 积分排行榜</div>${board}</div>`;
+}
+window.goToStudent=function(sid){filterSid=sid;curTab=1;document.querySelectorAll('.tab').forEach((b,j)=>b.classList.toggle('on',j===1));renderTab();};
+window.oAddStudent=function(){
+  _selAv=AVATARS[0];_selCl=COLORS[0];
+  document.getElementById('mt').textContent='＋ 添加孩子';
+  document.getElementById('mbody').innerHTML=`<div class="fgrid">
+    <div class="fg"><label class="fl">孩子姓名 *</label><input class="fi" id="sn" placeholder="如：小明"></div>
+    <div class="fg"><label class="fl">选择头像</label>
+      <div class="emoji-row" id="av-row">${AVATARS.map((a,i)=>`<span class="ep${i===0?' sel':''}" onclick="selAv('${a}',this)">${a}</span>`).join('')}</div>
+    </div>
+    <div class="fg"><label class="fl">选择颜色</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px" id="cl-row">
+        ${COLORS.map((c,i)=>`<div onclick="selCl('${c}',this)" style="width:26px;height:26px;border-radius:50%;background:${c};cursor:pointer;border:3px solid ${i===0?'#333':'transparent'};transition:all .15s"></div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('mf').innerHTML=`<button class="bs" onclick="cmo()">取消</button><button class="bp p" onclick="addStudent()">添加</button>`;
+  omo();
+};
+window.selAv=function(a,el){_selAv=a;document.querySelectorAll('.ep').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');};
+window.selCl=function(c,el){_selCl=c;document.querySelectorAll('#cl-row div').forEach(e=>e.style.border='3px solid transparent');el.style.border='3px solid #333';};
+window.addStudent=async function(){
+  const name=document.getElementById('sn').value.trim();
+  if(!name){toast('请输入孩子姓名');return;}
+  if(Object.values(DB.students).find(s=>s.name===name)){toast('已有同名孩子');return;}
+  const id=uid();
+  await dbSet(`/students/${id}`,{id,name,avatar:_selAv,color:_selCl});
+  cmo();toast('✅ 孩子已添加！');
+};
+window.delStudent=async function(id){
+  const s=DB.students[id];
+  if(!confirm(`确定删除"${s?s.name:'该孩子'}"？相关任务和记录也会一并删除。`))return;
+  const updates={};
+  updates[`/students/${id}`]=null;
+  Object.keys(DB.tasks).filter(k=>DB.tasks[k].studentId===id).forEach(k=>updates[`/tasks/${k}`]=null);
+  Object.keys(DB.redemptions).filter(k=>DB.redemptions[k].studentId===id).forEach(k=>updates[`/redemptions/${k}`]=null);
+  await update(ref(db,'/'),updates);
+  ss('ok','已同步');toast('已删除');
+};
+
+// ══════════════════════════════════════════
+//  PARENT — TASKS
+// ══════════════════════════════════════════
+function rPT(mc){
+  const students=Object.values(DB.students);
+  const allTasks=Object.entries(DB.tasks).map(([k,v])=>({...v,_key:k}));
+  const filtered=filterSid==='all'?allTasks:allTasks.filter(t=>t.studentId===filterSid);
+  const pend=filtered.filter(t=>t.status!=='completed').length;
+  const done=filtered.filter(t=>t.status==='completed').length;
+  const filterBar=`<div class="filter-bar">
+    <button class="filter-btn${filterSid==='all'?' on':''}" onclick="setFilter('all')">全部(${allTasks.length})</button>
+    ${students.map(s=>`<button class="filter-btn${filterSid===s.id?' on c':''}" onclick="setFilter('${s.id}')">${s.avatar}${s.name}(${allTasks.filter(t=>t.studentId===s.id).length})</button>`).join('')}
+  </div>`;
+  mc.innerHTML=`
+    <div class="srow">
+      <div class="sbox"><div class="snum" style="color:var(--yw)">${pend}</div><div class="slb">待完成</div></div>
+      <div class="sbox"><div class="snum" style="color:var(--gr)">${done}</div><div class="slb">已完成</div></div>
+      <div class="sbox"><div class="snum" style="color:var(--par)">${filtered.length}</div><div class="slb">共计</div></div>
+    </div>
+    <div class="card"><div class="ct">📋 任务列表
+      <button class="bp p" style="margin-left:auto;padding:6px 14px;font-size:12px" onclick="oAddT()">＋ 新建任务</button>
+    </div>${filterBar}
+    ${filtered.length===0?'<div class="emp"><div class="empi">📭</div><div class="empt">暂无任务</div></div>'
+      :filtered.slice().reverse().map(pTR).join('')}</div>`;
+}
+window.setFilter=function(sid){filterSid=sid;renderTab();};
+function pTR(t){
+  const d=t.status==='completed';
+  const s=DB.students[t.studentId];
+  return`<div class="ti"><div class="chk ${d?'done':''}"></div><div class="tb">
+    <div class="tit ${d?'done':''}">${TE[t.type]||'📌'} ${t.title}</div>
+    <div class="meta">
+      ${s?`<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:${s.color}22;color:${s.color};font-weight:600">${s.avatar}${s.name}</span>`:''}
+      <span class="tag ${t.type}">${TL[t.type]}</span>
+      <span class="tag ${t.status}">${SL[t.status]||t.status}</span>
+      ${t.due?`<span class="tdue">📅${t.due}</span>`:''}
+      <span class="tpts">⭐${t.pts}</span>
+    </div>
+    ${t.note?`<div class="tnote">💬${t.note}</div>`:''}
+    ${d&&t.rating?`<div style="font-size:11px;color:var(--yw);margin-top:4px">${'⭐'.repeat(t.rating)} <span style="color:var(--muted)">${t.comment||''}</span></div>`:''}
+    ${d&&!t.rating?`<button class="bico" style="margin-top:5px;font-size:11px" onclick="oRate('${t._key}')">✏️ 评价</button>`:''}
+  </div><div class="ta"><button class="bico del" onclick="delT('${t._key}')">🗑</button></div></div>`;
+}
+window.oAddT=function(){
+  const students=Object.values(DB.students);
+  if(students.length===0){toast('请先添加孩子再布置任务');swTab(0);return;}
+  const defSid=filterSid!=='all'?filterSid:students[0].id;
+  document.getElementById('mt').textContent='＋ 新建学习任务';
+  document.getElementById('mbody').innerHTML=`<div class="fgrid">
+    <div class="fg"><label class="fl">布置给</label>
+      <select class="fs" id="fsid">${students.map(s=>`<option value="${s.id}"${s.id===defSid?' selected':''}>${s.avatar} ${s.name}</option>`).join('')}</select>
+    </div>
+    <div class="fg"><label class="fl">任务标题 *</label><input class="fi" id="ft" placeholder="如：完成语文第5课生字练习"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">任务类型</label>
+        <select class="fs" id="ftype">
+          <option value="homework">📚 作业</option><option value="reading">📖 阅读</option>
+          <option value="exercise">🏃 运动</option><option value="quiz">📝 测验</option>
+          <option value="custom">✨ 自定义</option>
+        </select></div>
+      <div class="fg"><label class="fl">积分奖励</label><input class="fi" id="fpts" type="number" value="10" min="0"></div>
+    </div>
+    <div class="fg"><label class="fl">截止日期</label><input class="fi" id="fdue" type="date" value="${tmr()}"></div>
+    <div class="fg"><label class="fl">备注说明</label><textarea class="fta" id="fnote" placeholder="给孩子的提示..."></textarea></div>
+  </div>`;
+  document.getElementById('mf').innerHTML=`<button class="bs" onclick="cmo()">取消</button><button class="bp p" onclick="addT()">创建任务</button>`;
+  omo();
+};
+window.addT=async function(){
+  const title=document.getElementById('ft').value.trim();
+  if(!title){toast('请输入任务标题');return;}
+  const id=uid();
+  await dbSet(`/tasks/${id}`,{id,title,studentId:document.getElementById('fsid').value,
+    type:document.getElementById('ftype').value,status:'pending',
+    due:document.getElementById('fdue').value,
+    pts:parseInt(document.getElementById('fpts').value)||0,
+    note:document.getElementById('fnote').value.trim(),created:now()});
+  cmo();toast('✅ 任务已创建，学生端实时同步！');
+};
+window.delT=async function(key){
+  if(!confirm('确定删除这个任务？'))return;
+  await dbRemove(`/tasks/${key}`);toast('已删除');
+};
+window.oRate=function(key){
+  _rat=5;
+  document.getElementById('mt').textContent='⭐ 给孩子评价';
+  document.getElementById('mbody').innerHTML=`<div class="fgrid">
+    <div class="fg"><label class="fl">评分</label>
+      <div style="display:flex;gap:6px;margin-top:4px" id="stars">
+        ${[1,2,3,4,5].map(n=>`<span style="font-size:24px;cursor:pointer" onclick="setR(${n})">${n<=5?'⭐':'☆'}</span>`).join('')}
+      </div></div>
+    <div class="fg"><label class="fl">鼓励留言</label><input class="fi" id="rcmt" placeholder="太棒了！继续加油！"></div>
+  </div>`;
+  document.getElementById('mf').innerHTML=`<button class="bs" onclick="cmo()">取消</button><button class="bp p" onclick="subRate('${key}')">提交</button>`;
+  omo();
+};
+window.setR=function(n){_rat=n;document.querySelectorAll('#stars span').forEach((s,i)=>s.textContent=i<n?'⭐':'☆');};
+window.subRate=async function(key){
+  await dbUpdate(`/tasks/${key}`,{rating:_rat,comment:document.getElementById('rcmt').value.trim()});
+  cmo();toast('✅ 评价已保存！');
+};
+
+// ══════════════════════════════════════════
+//  PARENT — REWARDS
+// ══════════════════════════════════════════
+function rPR(mc){
+  const pendRdm=Object.entries(DB.redemptions).map(([k,v])=>({...v,_key:k})).filter(r=>r.status==='pending');
+  const rewards=Object.entries(DB.rewards).map(([k,v])=>({...v,_key:k}));
+  const ph=pendRdm.length===0?'':`<div class="card"><div class="ct" style="color:var(--chi)">⏳ 待审批兑换（${pendRdm.length}）</div>
+    ${pendRdm.map(r=>{const s=DB.students[r.studentId];
+      return`<div class="rdmi"><span style="font-size:22px">${r.emoji}</span>
+        <div style="flex:1"><div style="font-weight:500;font-size:13px">${r.name}
+          ${s?`<span style="font-size:11px;color:${s.color};font-weight:600;margin-left:5px">${s.avatar}${s.name}</span>`:''}
+        </div><div style="font-size:11px;color:var(--muted)">⭐${r.pts}分 · ${fd(r.time)}</div></div>
+        <button class="bp p" style="padding:4px 11px;font-size:11px;margin-right:5px" onclick="apv('${r._key}',true)">✓ 批准</button>
+        <button class="bs" style="padding:4px 10px;font-size:11px" onclick="apv('${r._key}',false)">✗ 拒绝</button>
+      </div>`;}).join('')}
+  </div>`;
+  mc.innerHTML=`${ph}<div class="card"><div class="ct">🏆 奖励项目
+    <button class="bp p" style="margin-left:auto;padding:6px 14px;font-size:12px" onclick="oAddR()">＋ 添加奖励</button></div>
+    <div class="rg">${rewards.map(r=>`<div class="rc">
+      <div class="rem2">${r.emoji}</div><div class="rn2">${r.name}</div>
+      <div class="rp2">⭐ ${r.pts}分</div><div class="rdsc">${r.desc}</div>
+      <button class="bico del" style="margin-top:8px;width:100%;font-size:11px" onclick="delR('${r._key}')">删除</button>
+    </div>`).join('')||'<div class="emp"><div class="empt">暂无奖励</div></div>'}</div></div>`;
+}
+window.oAddR=function(){
+  document.getElementById('mt').textContent='＋ 添加奖励';
+  document.getElementById('mbody').innerHTML=`<div class="fgrid"><div class="frow">
+    <div class="fg"><label class="fl">奖励名称 *</label><input class="fi" id="rn" placeholder="看动画片"></div>
+    <div class="fg"><label class="fl">图标表情</label><input class="fi" id="re" value="🎁" maxlength="2"></div></div>
+    <div class="fg"><label class="fl">所需积分</label><input class="fi" id="rp" type="number" value="20" min="1"></div>
+    <div class="fg"><label class="fl">奖励说明</label><input class="fi" id="rdesc" placeholder="详细描述..."></div>
+  </div>`;
+  document.getElementById('mf').innerHTML=`<button class="bs" onclick="cmo()">取消</button><button class="bp p" onclick="addR()">添加</button>`;
+  omo();
+};
+window.addR=async function(){
+  const n=document.getElementById('rn').value.trim();
+  if(!n){toast('请输入奖励名称');return;}
+  const id=uid();
+  await dbSet(`/rewards/${id}`,{id,name:n,emoji:document.getElementById('re').value||'🎁',
+    pts:parseInt(document.getElementById('rp').value)||10,desc:document.getElementById('rdesc').value.trim()});
+  cmo();toast('✅ 奖励已添加！');
+};
+window.delR=async function(key){
+  if(!confirm('确定删除？'))return;
+  await dbRemove(`/rewards/${key}`);toast('已删除');
+};
+window.apv=async function(key,ok){
+  await dbUpdate(`/redemptions/${key}`,{status:ok?'approved':'rejected'});
+  toast(ok?'✅ 已批准！':'❌ 已拒绝');
+};
+
+// ══════════════════════════════════════════
+//  PARENT — RECORDS
+// ══════════════════════════════════════════
+function rPRec(mc){
+  const students=Object.values(DB.students);
+  const allDone=Object.entries(DB.tasks).map(([k,v])=>({...v,_key:k})).filter(t=>t.status==='completed');
+  const shown=filterSid==='all'?allDone:allDone.filter(t=>t.studentId===filterSid);
+  const filterBar=`<div class="filter-bar">
+    <button class="filter-btn${filterSid==='all'?' on':''}" onclick="setFilter('all');rPRec(document.getElementById('main-content'))">全部</button>
+    ${students.map(s=>`<button class="filter-btn${filterSid===s.id?' on c':''}" onclick="setFilter('${s.id}');rPRec(document.getElementById('main-content'))">${s.avatar}${s.name}</button>`).join('')}
+  </div>`;
+  mc.innerHTML=`<div class="card"><div class="ct">📊 完成记录 ${filterBar}</div>
+    ${shown.length===0?'<div class="emp"><div class="empi">📊</div><div class="empt">还没有完成记录</div></div>'
+      :shown.slice().reverse().map(t=>{const s=DB.students[t.studentId];
+        return`<div class="ti"><div class="chk done"></div><div class="tb">
+          <div class="tit">${t.title}</div>
+          <div class="meta">
+            ${s?`<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:${s.color}22;color:${s.color};font-weight:600">${s.avatar}${s.name}</span>`:''}
+            <span class="tag ${t.type}">${TL[t.type]}</span>
+            <span class="tpts">⭐+${t.pts}</span>
+            <span class="tdue">✅${fd(t.completedAt)}</span>
+          </div>
+          ${t.rating?`<div style="font-size:11px;color:var(--yw);margin-top:3px">${'⭐'.repeat(t.rating)} <span style="color:var(--muted)">${t.comment||''}</span></div>`
+            :`<button class="bico" style="margin-top:5px;font-size:11px" onclick="oRate('${t._key}')">✏️ 评价</button>`}
+        </div></div>`;}).join('')}
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+//  CHILD — TASKS
+// ══════════════════════════════════════════
+function rCT(mc){
+  const s=DB.students[currentStudentId];
+  if(!s){mc.innerHTML='<div class="emp"><div class="empi">😕</div><div class="empt">找不到你的账号</div></div>';return;}
+  const p=ptsOf(s.id);
+  const myT=Object.entries(DB.tasks).map(([k,v])=>({...v,_key:k})).filter(t=>t.studentId===s.id);
+  const pend=myT.filter(t=>t.status!=='completed');
+  const done=myT.filter(t=>t.status==='completed');
+  mc.innerHTML=`
+    <div class="hero c">
+      <div class="hav c" style="background:${s.color}22;border-color:${s.color}">${s.avatar}</div>
+      <div><div class="hn">${s.name}，加油！💪</div>
+        <div class="hpt c">⭐ 当前积分：${p.c} 分</div>
+        <div class="hsb">今天有 ${pend.length} 个任务 ${pend.length===0?'全部完成了 🎉':'等你完成 💪'}</div>
+      </div>
+    </div>
+    <div class="card"><div class="ct">📋 待完成任务（${pend.length}）</div>
+      ${pend.length===0?'<div class="emp"><div class="empi">🎉</div><div class="empt">所有任务都完成了，太棒了！</div></div>':pend.map(cTR).join('')}
+    </div>
+    ${done.length===0?'':`<div class="card"><div class="ct">✅ 已完成（${done.length}）</div>${done.slice().reverse().map(cTR).join('')}</div>`}`;
+}
+function cTR(t){
+  const d=t.status==='completed';
+  return`<div class="ti"><div class="chk ${d?'done':''}"></div><div class="tb">
+    <div class="tit ${d?'done':''}">${TE[t.type]||'📌'} ${t.title}</div>
+    <div class="meta"><span class="tag ${t.type}">${TL[t.type]}</span>
+      ${t.due?`<span class="tdue">📅${t.due}</span>`:''}
+      <span class="tpts">⭐${t.pts}分</span></div>
+    ${t.note?`<div class="tnote">💬${t.note}</div>`:''}
+    ${d&&t.rating?`<div style="font-size:11px;color:var(--yw);margin-top:4px">${'⭐'.repeat(t.rating)} <span style="color:var(--muted)">${t.comment||''}</span></div>`:''}
+  </div>${!d?`<button class="bcmp" onclick="doC('${t._key}')">打卡完成 ✓</button>`:''}</div>`;
+}
+window.doC=async function(key){
+  await dbUpdate(`/tasks/${key}`,{status:'completed',completedAt:now()});
+  const t=DB.tasks[key];
+  const em=['🎉','🌟','🏆','🎊','✨','🚀'];
+  document.getElementById('ce').textContent=em[Math.floor(Math.random()*em.length)];
+  document.getElementById('ct2').textContent='太棒了！完成啦！';
+  document.getElementById('cs').textContent=`获得了 ${t?t.pts:0} 积分！`;
+  document.getElementById('cel').classList.add('show');
+};
+window.closeCel=function(){document.getElementById('cel').classList.remove('show');};
+
+// ══════════════════════════════════════════
+//  CHILD — REWARDS
+// ══════════════════════════════════════════
+function rCR(mc){
+  const p=ptsOf(currentStudentId);
+  const rewards=Object.entries(DB.rewards).map(([k,v])=>({...v,_key:k}));
+  const myR=Object.values(DB.redemptions).filter(r=>r.studentId===currentStudentId).slice().reverse();
+  mc.innerHTML=`
+    <div class="pts-hero">
+      <div class="pb">${p.c}</div><div class="pl">⭐ 当前可用积分</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:5px">累计获得 ${p.e} 分 · 已兑换 ${p.sp} 分</div>
+      <div class="pbar"><div class="pfill" style="width:${p.e>0?Math.min(100,p.c/p.e*100):0}%;background:linear-gradient(90deg,var(--yw),#f0c050)"></div></div>
+    </div>
+    <div class="card"><div class="ct">🏆 可兑换的奖励</div><div class="rg">
+      ${rewards.length===0?'<div class="emp"><div class="empt">家长还没有设置奖励</div></div>'
+        :rewards.map(r=>{const can=p.c>=r.pts;return`<div class="rc ${can?'can':''}">
+          <div class="rem2">${r.emoji}</div><div class="rn2">${r.name}</div>
+          <div class="rp2">⭐${r.pts}分</div><div class="rdsc">${r.desc}</div>
+          ${can?`<button class="brm" onclick="redeem('${r._key}')">立即兑换 🎉</button>`
+            :`<button class="brm" disabled>还差 ${r.pts-p.c} 分</button>`}
+        </div>`;}).join('')}
+    </div></div>
+    ${myR.length===0?'':`<div class="card"><div class="ct">📋 我的兑换记录</div>
+      ${myR.map(r=>`<div class="rdmi"><span style="font-size:20px">${r.emoji}</span>
+        <div style="flex:1"><div style="font-weight:500;font-size:13px">${r.name}</div>
+          <div style="font-size:11px;color:var(--muted)">⭐${r.pts}分 · ${fd(r.time)}</div></div>
+        <span class="tag ${r.status==='pending'?'waiting':r.status}">
+          ${r.status==='pending'?'等待审批':r.status==='approved'?'✅已批准':'❌已拒绝'}
+        </span></div>`).join('')}
+    </div>`}`;
+}
+window.redeem=async function(key){
+  const r=DB.rewards[key];const p=ptsOf(currentStudentId);
+  if(!r||p.c<r.pts){toast('积分不足，继续加油！');return;}
+  const already=Object.values(DB.redemptions).find(d=>d.rewardId===key&&d.studentId===currentStudentId&&d.status==='pending');
+  if(already){toast('已有待审批申请');return;}
+  const id=uid();
+  await dbSet(`/redemptions/${id}`,{id,rewardId:key,studentId:currentStudentId,name:r.name,emoji:r.emoji,pts:r.pts,status:'pending',time:now()});
+  toast('🎉 兑换申请已提交！');
+};
+
+// ══════════════════════════════════════════
+//  CHILD — RECORDS
+// ══════════════════════════════════════════
+function rCRec(mc){
+  const myT=Object.entries(DB.tasks).map(([k,v])=>({...v,_key:k})).filter(t=>t.studentId===currentStudentId);
+  const done=myT.filter(t=>t.status==='completed');
+  const p=ptsOf(currentStudentId);
+  const pct=myT.length>0?Math.round(done.length/myT.length*100):0;
+  mc.innerHTML=`
+    <div class="srow">
+      <div class="sbox"><div class="snum" style="color:var(--gr)">${done.length}</div><div class="slb">完成任务</div></div>
+      <div class="sbox"><div class="snum" style="color:var(--yw)">${p.e}</div><div class="slb">累计积分</div></div>
+      <div class="sbox"><div class="snum" style="color:var(--chi)">${pct}%</div><div class="slb">完成率</div></div>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:7px">总完成进度</div>
+      <div class="pbar"><div class="pfill" style="width:${pct}%;background:linear-gradient(90deg,var(--gr),#7dd4a0)"></div></div>
+      <div style="font-size:11px;color:var(--muted);text-align:right;margin-top:4px">${done.length}/${myT.length}</div>
+    </div>
+    <div class="card"><div class="ct">📊 完成记录</div>
+      ${done.length===0?'<div class="emp"><div class="empi">📊</div><div class="empt">还没有完成记录，快去打卡吧！</div></div>'
+        :done.slice().reverse().map(t=>`<div class="ti"><div class="chk done"></div><div class="tb">
+          <div class="tit">${t.title}</div>
+          <div class="meta"><span class="tag ${t.type}">${TL[t.type]}</span>
+            <span class="tpts">⭐+${t.pts}</span><span class="tdue">✅${fd(t.completedAt)}</span></div>
+          ${t.rating?`<div style="font-size:11px;color:var(--yw);margin-top:3px">${'⭐'.repeat(t.rating)} <span style="color:var(--muted)">${t.comment||''}</span></div>`:''}
+        </div></div>`).join('')}
+    </div>`;
+}
+
+// ══════════════════════════════════════════
+//  MODAL & TOAST
+// ══════════════════════════════════════════
+window.omo=function(){document.getElementById('mo').classList.add('open');};
+window.cmo=function(e){if(e&&e.target!==document.getElementById('mo'))return;document.getElementById('mo').classList.remove('open');};
+let _tt;
+window.toast=function(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2800);};
+
+</script>
+</body>
+</html>
